@@ -14,7 +14,9 @@ class WordleFinder:
     self.contain_letters_ = {}
     self.n_ = 5
     self.hard_ = hard
-    self.pos_ = []
+    self.pos_ = [a for a  in self.dict_]
+    self.freq_ = {}
+    self.sug_ = 0
 
   """ Read dictionary and return it as set of strings """
   def ReadDict(self,dictfile):
@@ -63,13 +65,11 @@ class WordleFinder:
       else:
         self.failed_letters_.add(word[i])
     self.UpdatePossibleWords()
+    self.sug_ = 0
 
   """ update the set of words that would be feasible given
       current information """
   def UpdatePossibleWords(self):
-    if len(self.pos_) == 0:
-      ## Copy the dictioary
-      self.pos_ = set([word for word in self.dict_])
     ## Next rule out everything that does not match. 
     removed = []
     for word in self.pos_:
@@ -89,18 +89,41 @@ class WordleFinder:
       for a in lettercount:
         if lettercount[a] > 0:
           removed.append(word)
-    self.pos_.difference_update(removed)
+    for r in removed:
+      if not r in self.pos_:
+        continue
+      self.pos_.remove(r)
+
   """ Report the number of words left in dictionary """
   def NumLeft(self):
     return len(self.pos_)
+  
+  """ Helper function to calculate residual frequency table """
+  def UpdateFreqTable(self):
+    self.freq_ = {}
+    for word in self.pos_:
+      for i,ltr in enumerate(word):
+        if self.correct_[i]:
+          if not ltr in self.freq_:
+            self.freq_[ltr] = 0
+          continue
+        if not ltr in self.freq_:
+          self.freq_[ltr] = 1
+        else:
+          self.freq_[ltr] += 1
+    
+  def SortPos(self):
+    ckey = lambda string: sum([self.freq_[ltr] for ltr in set(string) ])
+    self.pos_.sort(key=ckey,reverse=True)
 
   """ Come up with the suggestion for next word """
   def SuggestWord(self):
-  ## Just pick a random word
-    if len(self.pos_) > 0:
-      return self.pos_.pop()
-    else:
-      return False
+    self.UpdateFreqTable()
+    self.SortPos()
+    togo = self.pos_[self.sug_]
+    self.sug_+=1
+    return togo
+
 
 def InputWord():
   return input().strip()
@@ -113,9 +136,15 @@ def InputIndexList():
 
 if __name__ == "__main__":
   W = WordleFinder()
+  sgt = W.SuggestWord()
+  print("To start, I suggest: ")
+  print(sgt)
   while True:
-    print("Enter word:")
+    print("Enter word or write 0 if you need a new word:")
     word = InputWord()    
+    if word == "0":
+      sgt = W.SuggestWord()
+      continue
     erms = W.CheckWord(word)
     if erms:
       print(erms)
