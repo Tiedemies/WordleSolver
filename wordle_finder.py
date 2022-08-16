@@ -144,6 +144,8 @@ if __name__ == "__main__":
     word = InputWord()    
     if word == "0":
       sgt = W.SuggestWord()
+      print ("In that case, I suggest:")
+      print(sgt)
       continue
     erms = W.CheckWord(word)
     if erms:
