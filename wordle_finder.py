@@ -127,6 +127,7 @@ class WordleFinder:
 
 def InputWord():
   return input().strip()
+  
 def InputIndexList():
   thelist = []
   y = input()
